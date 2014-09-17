@@ -1,0 +1,100 @@
+---
+title: "Barbell Lift Prediction"
+author: "Chad Topaz"
+date: "September 15, 2014"
+output: html_document
+---
+
+```{r include=FALSE}
+setwd("~/Google Drive/Student/Coursera/Data Science/Practical Machine Learning/Project")
+library(caret)
+library(doMC)
+registerDoMC(cores = 7)
+```
+
+### Executive summary
+Using machine learning techniques, we classify the dumbell lift types of individuals based on data gathered from a personal activity monitoring device. The predictor is a random forest built with 10-fold cross validation. We validate the predictor on a (validation) test set and we find an out-of-sample accuracy greater than 99%. Finally, we use the model to predict dumbell lift type on a small set of activity data for twenty lifts of unknown type.
+
+
+### Introduction and background
+
+With the advent of activity monitoring devices such as Fitbit, Jawbone Up, and Nike FuelBand, rich data describing human physical activity are available. The most common use of the data is to evaluate how much a user undertakes various physical activities. The purpose of the present project is to use the techniques of machine learning to instead quantify how well the user performs a given activity.
+
+We use data from accelerometers on the belt, forearm, and arm of users who performed barbell lifts correctly and in five different incorrect ways. We build a predictor using a random forest, and then use it to classify the lift types for a small data set of twenty lifts.
+
+The data and the original study are described much more in depth [here](http://groupware.les.inf.puc-rio.br/har).
+
+### Obtaining data
+
+We download data from the links provided, making sure to replace empty strings in the input files with `NA`.
+
+```{r cache=TRUE}
+training <- read.csv("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", na.strings=c("","NA"))
+testing <- read.csv("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", na.strings=c("","NA"))
+```
+
+### Cleaning and preprocessing data
+
+First we look at the overall structure of the two data sets.
+```{r}
+str(training)
+str(testing)
+```
+The names given to the data sets (by the course organizers) are somewhat misleading because the `testing` set will not be use to evaluate an out-of-sample accuracy. Rather, the set that the organizers call `testing` will be used to make (unverifiable) predictions. Therefore, we will eventually rename the data sets (in the next section).
+
+The first seven columns of the data sets appear to be identification information undesirable for prediction. We drop these columns.
+```{r}
+training <- subset(training,select=-seq(1,7))
+testing <- subset(testing,select=-seq(1,7))
+```
+
+Many of the remaining columns are mostly `NA` values. We remove any columns that don't have at least 90% legitimate (non-`NA`) values. We apply this criterion to the `training` set, and then remove corresponding columns from the `testing` set as well.
+```{r}
+dropCols <- NULL
+for (i in 1:ncol(training)) {
+  thisData <- training[,i]
+  percentGood <- sum(complete.cases(thisData))/nrow(training)
+  if (percentGood < 0.9) {
+    dropCols <- c(dropCols,i)
+  }
+}
+training <- subset(training,select=-dropCols)
+testing <- subset(testing,select=-dropCols)
+```
+
+### Separating data for machine learning tasks
+
+For clarity, we rename the `testing` data set as `predictionSet` since it will be used to make predictions. Then, we partition the set `training` into a set called `trainingSet` which contains 60% of the original `training` data and will be used to build a predictor, and a set called `validationSet` which contains 40% of the original `training` data and will be used to (cross)validate the predictor by evaluate the out-of-sample accuracy.
+```{r}
+predictionSet <- testing
+set.seed(12345)
+inTrain = createDataPartition(training$classe, p = .6)[[1]]
+trainingSet = training[inTrain,]
+validationSet = training[-inTrain,]
+```
+The training set has `r nrow(trainingSet)` observations and the validation set has `r nrow(validationSet)` observations. Both sets have `r ncol(trainingSet)` variables, including the outcome variable `classe` (dumbell lift type).
+
+### Building a predictor with cross-validation
+We use a random forest method to classify the types of barbell moves. To construct the model, we preprocess the data by centering and scaling it, and use repeated 10-fold cross-validation as the training control.
+```{r cache=TRUE, message=FALSE, warning=FALSE}
+ctrl <- trainControl(method = "repeatedcv", number=10)
+rfFit <- train(classe ~ ., data = trainingSet, method="rf", trControl=ctrl, preProc=c("center","scale"))
+```
+
+### Validating the predictor
+To validate our predictor, we now apply it to the test set and calculate, among other things, the out-of-sample accuracy.
+```{r, message=FALSE, warning=FALSE}
+rfPredict <- predict(rfFit,validationSet)
+confusionMatrix(rfPredict, reference=validationSet$classe)
+```
+The predictor is highly accurate out of sample: 99.3% overall accuracy. The sensitivy, specificity, positive predictive value, and negative predictive value are all similarly high across each barbell lift type. Thus, we are encouraged to make predictions using the predictor we have now built and validated.
+
+### Making predictions
+We now plug our prediction data into the predictor.
+```{r}
+finalPredictions <- predict(rfFit,predictionSet)
+finalPredictions
+```
+
+### Conclusion
+In this project, we created a predictor using the random forest method of machine learning. The predictor performs extremely well (> 99% accuracy out-of-sample) when applied to a validation test set. Finally, we used the predictor to categorize the dumbell curl types based on activity data from 20 dumbell lifts of unknown type.

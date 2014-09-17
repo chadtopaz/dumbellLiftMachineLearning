@@ -1,8 +1,8 @@
 ---
 title: "Barbell Lift Prediction"
 author: "Chad Topaz"
-date: "September 15, 2014"
-output: html_document
+date: "September 17, 2014"
+output: pdf_document
 ---
 
 ```{r include=FALSE}

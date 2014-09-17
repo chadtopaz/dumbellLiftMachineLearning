@@ -313,6 +313,29 @@ validationSet = training[-inTrain,]</code></pre>
 <p>We use a random forest method to classify the types of barbell moves. To construct the model, we preprocess the data by centering and scaling it, and use repeated 10-fold cross-validation as the training control.</p>
 <pre class="r"><code>ctrl &lt;- trainControl(method = &quot;repeatedcv&quot;, number=10)
 rfFit &lt;- train(classe ~ ., data = trainingSet, method=&quot;rf&quot;, trControl=ctrl, preProc=c(&quot;center&quot;,&quot;scale&quot;))</code></pre>
+<p>We can see how the predictor performed in-sample.</p>
+<pre class="r"><code>rfFit</code></pre>
+<pre><code>## Random Forest 
+## 
+## 11776 samples
+##    52 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## Pre-processing: centered, scaled 
+## Resampling: Cross-Validated (10 fold, repeated 1 times) 
+## 
+## Summary of sample sizes: 10598, 10597, 10598, 10598, 10601, 10598, ... 
+## 
+## Resampling results across tuning parameters:
+## 
+##   mtry  Accuracy  Kappa  Accuracy SD  Kappa SD
+##    2    1         1      0.003        0.004   
+##   27    1         1      0.004        0.005   
+##   52    1         1      0.003        0.004   
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was mtry = 2.</code></pre>
+<p>The predictor performed with 100% accuracy in-sample. By necessity, the out-of-sample accuracy should be less than this! Even if the in-sample accurace were LESS than 100%, we would still expect the out-of-sample accuracy to be less than the in-sample accuracy.</p>
 </div>
 <div id="validating-the-predictor" class="section level3">
 <h3>Validating the predictor</h3>

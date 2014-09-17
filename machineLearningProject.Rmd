@@ -80,6 +80,11 @@ We use a random forest method to classify the types of barbell moves. To constru
 ctrl <- trainControl(method = "repeatedcv", number=10)
 rfFit <- train(classe ~ ., data = trainingSet, method="rf", trControl=ctrl, preProc=c("center","scale"))
 ```
+We can see how the predictor performed in-sample.
+```{r}
+rfFit
+```
+The predictor performed with 100% accuracy in-sample. By necessity, the out-of-sample accuracy should be less than this! Even if the in-sample accurace were LESS than 100%, we would still expect the out-of-sample accuracy to be less than the in-sample accuracy.
 
 ### Validating the predictor
 To validate our predictor, we now apply it to the test set and calculate, among other things, the out-of-sample accuracy.

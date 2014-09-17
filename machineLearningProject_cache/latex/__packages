@@ -1,14 +1,9 @@
 base
 caret
-datasets
 doMC
+e1071
 foreach
 ggplot2
-graphics
-grDevices
 iterators
 lattice
-methods
-parallel
-stats
-utils
+randomForest
